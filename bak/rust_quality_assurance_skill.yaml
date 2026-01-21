@@ -1,0 +1,24 @@
+--- SKILL ---
+name: rust-quality-assurance
+description: Guidelines for ensuring code quality, correctness, and performance through testing, linting, and profiling.
+---
+
+# Rust Quality Assurance
+
+## 1. Testing Strategy
+- **Unit Tests**: Place unit tests in the same file as the code they test, within a `#[cfg(test)] mod tests { ... }` block. Focus on testing individual functions and modules in isolation.
+- **Integration Tests**: Place integration tests in the `tests/` directory. These tests should cover the public interface of the crate, including API endpoints.
+- **Test Database**: For integration tests involving the database, use a dedicated test database instance or employ the `testcontainers` crate to spin up a fresh database for each test run. **Never** run integration tests against the production database.
+- **Mocking**: Use crates like `mockall` for mocking external dependencies or complex internal components to isolate unit tests.
+
+## 2. Linting and Formatting
+- **Mandatory Linting**: Always run `cargo clippy -- -D warnings`. Treating warnings as errors ensures a high standard of code quality and prevents the accumulation of technical debt.
+- **Formatting**: Use `cargo fmt` to enforce a consistent code style. The check `cargo fmt --check` must pass before any commit.
+
+## 3. Performance and Concurrency
+- **Benchmarking**: Use the built-in `criterion` crate for micro-benchmarking critical code paths.
+- **Profiling**: Use tools like `perf` or `flamegraph` to identify bottlenecks in CPU usage.
+- **Async Best Practices**:
+    - **Avoid `block_on`**: Never use `tokio::runtime::Handle::block_on` inside an asynchronous context, as it can lead to deadlocks.
+    - **Spawn Tasks**: Use `tokio::spawn` for fire-and-forget tasks or tasks that can run concurrently without blocking the main request handler.
+    - **Minimize `await` Points**: Be mindful of where you `await`. Long-running synchronous operations should be moved to a `tokio::task::spawn_blocking` thread pool.

@@ -1,0 +1,30 @@
+--- SKILL ---
+name: rust-web-patterns
+description: Best practices for building robust, scalable, and idiomatic web services using Axum, Tokio, and modern Rust crates.
+---
+
+# Rust Web Patterns (Axum Focus)
+
+## 1. Web Server Architecture
+- **State Management**: Use `axum::extract::State<T>` for dependency injection. `T` should typically be an `Arc<AppState>` struct containing database pools, configuration, and other shared resources.
+- **Routing**: Define all routes in a dedicated `router.rs` or similar module. Use `axum::Router::merge` for modular route composition.
+- **Middleware**: Apply middleware using `axum::Router::layer`.
+    - **Tracing**: Use `tower_http::trace::TraceLayer` for request logging and tracing.
+    - **CORS**: Use `tower_http::cors::CorsLayer` for cross-origin resource sharing.
+    - **Compression**: Use `tower_http::compression::CompressionLayer` for response compression.
+
+## 2. Robust Error Handling
+- **Centralized Error Type**: Define a single, top-level `AppError` enum that encompasses all possible application errors (e.g., database, validation, not found, authentication).
+- **Conversion to Response**: Implement `axum::response::IntoResponse` for `AppError`. This allows the error to be returned directly from a handler, automatically converting it into an appropriate HTTP status code and JSON body.
+- **Error Mapping**: Use the `?` operator for propagation. When using external crates (like `sqlx::Error`), implement `From<ExternalError> for AppError` to map them cleanly into your central error type.
+- **Panic Avoidance**: Never use `unwrap()`, `expect()`, or `panic!` in request handlers.
+
+## 3. Data Transfer Objects (DTOs) and Validation
+- **Serialization**: Use `serde::Deserialize` for incoming request bodies and `serde::Serialize` for outgoing responses.
+- **Validation**: Use the `validator` crate for declarative validation of request DTOs. Extract validated data using `axum::extract::Json<Validated<T>>` (or similar custom extractor).
+- **Response Structure**: All successful API responses should be consistent, typically a JSON object. Errors should also be consistent (e.g., `{ "error": "..." }`).
+
+## 4. Observability (Tracing)
+- **Setup**: Initialize a global tracing subscriber (e.g., using `tracing_subscriber::fmt`).
+- **Spans**: Use `#[tracing::instrument]` on handler functions to automatically create spans for request processing.
+- **Context**: Ensure that relevant request details (e.g., user ID, request path) are included in the tracing context.

@@ -1,0 +1,23 @@
+--- SKILL ---
+name: rust-data-persistence
+description: Best practices for safe, asynchronous, and type-checked database interactions using SQLx.
+---
+
+# Rust Data Persistence (SQLx Focus)
+
+## 1. Type-Safe Queries
+- **Compile-Time Verification**: Always prefer `sqlx::query_as!` or `sqlx::query!` macros. These macros check the SQL syntax and the resulting data types against the database schema at compile time, preventing runtime errors.
+- **Data Modeling**: Map database rows to custom Rust structs using `#[derive(sqlx::FromRow)]`. Avoid using generic tuples for query results unless the query is extremely simple.
+- **Optional Fields**: Use `Option<T>` in your Rust structs for nullable database columns.
+
+## 2. Connection Management
+- **Connection Pooling**: Use `sqlx::Pool<DB>` (e.g., `sqlx::PgPool`) for managing database connections. The pool should be initialized once at application startup and stored in the application state (`axum::extract::State`).
+- **Transaction Management**: Use `pool.begin().await?` to start a transaction. Use `tx.commit().await?` or `tx.rollback().await?` to finalize. Transactions should be kept as short as possible to avoid blocking the pool.
+
+## 3. Migrations
+- **Tooling**: Manage schema changes using the `sqlx-cli`.
+- **Execution**: Run migrations programmatically at application startup using `sqlx::migrate!().run(&pool).await?`. This ensures the application only starts if the database schema is correct.
+
+## 4. Avoiding Pitfalls
+- **Blocking**: Ensure all database operations are `await`ed and do not block the Tokio runtime. SQLx is designed to be fully asynchronous.
+- **Sensitive Data**: Never log raw SQL queries that might contain sensitive user input. Use parameterized queries to prevent SQL injection.
