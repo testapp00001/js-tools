@@ -26,8 +26,23 @@ import { resolve, join } from 'path';
   try {
     // 1. Parse Command-Line Arguments
     const args = Bun.argv;
-    const srcDir = getArgValue(args, '--src', '.');
-    const outFile = getArgValue(args, '--out', './combined.md');
+    let args_src = getArgValue(args, '--src', '');
+    let args_out = getArgValue(args, '--out', '');
+    if(!args_src) {
+      args_src = args[2] || '';
+    }
+    if(!args_out) {
+      args_out = args[3] || '';
+    }
+    const srcDir = args_src || '';
+    const outFile = args_out || '';
+    if (!outFile) {
+      throw new Error('Output file not specified. Use --out <output-file-path>');
+    }
+    if (!srcDir) {
+      throw new Error('Source directory not specified. Use --src <source-directory-path>');
+    }
+
 
     const sourcePath = resolve(process.cwd(), srcDir);
     const outputPath = resolve(process.cwd(), outFile);
@@ -46,15 +61,37 @@ import { resolve, join } from 'path';
     // 3. Smart File Discovery (Recursive)
     const allFiles = await readdir(sourcePath, { recursive: true, withFileTypes: true });
 
-    const excludeFolders = ['.git', 'tmp', 'node_modules', 'dist', 'build'];
-    const excludeFiles = ['*.DS_Store', '*.log', '*.tmp', 'package-lock.json', 'yarn.lock', 'bun.lockb'];
+    const excludeFolders = ['.git', 'tmp', 'node_modules', 'dist', 'build', 'assets'];
+    const excludeFiles = [
+      '^\\.',
+      '*.DS_Store',
+      '*.log',
+      '*.tmp',
+      'package-lock.json',
+      'yarn.lock',
+      'bun.lockb',
+      '*.svg',
+      '*.png',
+      '*.jpg',
+      '*.jpeg',
+      '*.gif',
+      '*.exe',
+      '*.js',
+      '*.ts',
+      '*.html',
+      '*.css',
+      '*.jsx',
+      '*.tsx',
+      '*.jar',
+    ];
+    // Ensure `files` is declared and accessible
     const files = allFiles
       .filter((file) => {
         const isExcludedFolder = excludeFolders.some((folder) => file.parentPath.includes(folder));
         const isExcludedFile = excludeFiles.some((pattern) => file.name.match(new RegExp(pattern.replace('*', '.*'))));
         return !isExcludedFolder && !isExcludedFile && file.isFile();
       })
-      .sort(); 
+      .sort();
 
     // 4. Handle No Files Found
     if (files.length === 0) {
@@ -66,7 +103,7 @@ import { resolve, join } from 'path';
 
     // 5. Intelligent Concatenation
     const combinedContent: string[] = [`# Combined Documentation\n`];
-    
+
     for (const fileInfo of files) {
       const fullPath = join(fileInfo.parentPath, fileInfo.name);
       console.log(`   ↳ Combining: ${fullPath}`);
@@ -85,6 +122,31 @@ import { resolve, join } from 'path';
     await Bun.write(outputPath, combinedContent.join('\n'));
 
     console.log(`\n✅ Successfully combined all files into '${outputPath}'!`);
+
+    // --- File Type Summary ---
+    const fileTypeSummary: Record<string, { count: number; totalSize: number }> = {};
+
+    for (const fileInfo of files) {
+      const fullPath = join(fileInfo.parentPath, fileInfo.name);
+      const fileExtension = fileInfo.name.split('.').pop() || 'unknown';
+
+      // Get file size
+      const fileStats = await stat(fullPath);
+      const fileSize = fileStats.size;
+
+      // Update summary
+      if (!fileTypeSummary[fileExtension]) {
+        fileTypeSummary[fileExtension] = { count: 0, totalSize: 0 };
+      }
+      fileTypeSummary[fileExtension].count += 1;
+      fileTypeSummary[fileExtension].totalSize += fileSize;
+    }
+
+    // Display the summary
+    console.log('\n📊 File Type Summary:');
+    for (const [fileType, { count, totalSize }] of Object.entries(fileTypeSummary)) {
+      console.log(`   - ${fileType}: ${count} file(s), ${totalSize} bytes`);
+    }
   } catch (error) {
     // 7. Robust Error Handling
     if (error instanceof Error) {

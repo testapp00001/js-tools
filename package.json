@@ -1,28 +1,25 @@
 {
   "name": "bun-js-tools",
   "module": "index.ts",
-  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  },
   "private": true,
   "scripts": {
-    "combine-md": "bun run ./tools/markdown-combiner/combine.ts",
+    "combine": "bun run ./tools/markdown-combiner/combine.ts",
+    "antigravity": "bun run ./tools/antigravity-docs/crawler.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
     "typecheck": "bun tsc"
   },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@typescript-eslint/eslint-plugin": "^8.37.0",
-    "@typescript-eslint/parser": "^8.37.0",
-    "eslint": "^9.31.0",
-    "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.6.2"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
-    "swagger-ui-express": "^5.0.1",
-    "yamljs": "^0.3.0"
-  }
+  "type": "module"
 }
